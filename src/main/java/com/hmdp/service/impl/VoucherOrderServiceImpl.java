@@ -120,7 +120,7 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
                     // 3.创建订单
                     createVoucherOrder(voucherOrder);
                     // 4.确认消息 XACK
-                    stringRedisTemplate.opsForStream().acknowledge("s1", "g1", record.getId());
+                    stringRedisTemplate.opsForStream().acknowledge("stream.orders", "g1", record.getId());
                 } catch (Exception e) {
                     log.error("处理订单异常", e);
                     //处理异常消息
@@ -151,7 +151,7 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
                 // 3.创建订单
                 createVoucherOrder(voucherOrder);
                 // 4.确认消息 XACK
-                stringRedisTemplate.opsForStream().acknowledge("s1", "g1", record.getId());
+                stringRedisTemplate.opsForStream().acknowledge("stream.orders", "g1", record.getId());
             } catch (Exception e) {
                 log.error("处理pendding订单异常", e);
                 try{

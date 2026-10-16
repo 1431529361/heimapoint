@@ -29,10 +29,7 @@ class HmDianPingApplicationTests {
     @Autowired
     private RedisIdWorker redisIdWorker;
     private ExecutorService es = Executors.newFixedThreadPool(300);
-    @Test
-    void contextLoads() {
-        shopService.saveShop2Redis(1L, 10L);
-    }
+
     @Test
     void testIdWorker() throws InterruptedException {
         CountDownLatch latch = new CountDownLatch(300);

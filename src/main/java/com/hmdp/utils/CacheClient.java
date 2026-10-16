@@ -1,6 +1,7 @@
 package com.hmdp.utils;
 
 import cn.hutool.core.util.BooleanUtil;
+import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
@@ -58,7 +59,9 @@ public class CacheClient {
     public void setWithLogicalExpire(String key, Object value, Long time, TimeUnit  unit){
         RedisData redisData = new RedisData();
         redisData.setData(value);
-        redisData.setExpireTime(LocalDateTime.now().plusSeconds(unit.toSeconds(time)));
+        long seconds = unit.toSeconds(time);
+        long jitter = RandomUtil.randomLong(0,Math.max(seconds/10,1));
+        redisData.setExpireTime(LocalDateTime.now().plusSeconds(seconds + jitter));
         stringRedisTemplate.opsForValue().set(key, JSONUtil.toJsonStr(redisData));
     }
 
