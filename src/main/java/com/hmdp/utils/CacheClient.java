@@ -6,12 +6,13 @@ import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
@@ -26,14 +27,13 @@ import static com.hmdp.utils.RedisConstants.LOCK_SHOP_KEY;
 @Component
 public class CacheClient {
     private final StringRedisTemplate stringRedisTemplate;
-    public CacheClient(StringRedisTemplate stringRedisTemplate) {
+    private final ThreadPoolTaskExecutor cacheExecutor;
+    public CacheClient(StringRedisTemplate stringRedisTemplate, @Qualifier("cacheExecutor") ThreadPoolTaskExecutor cacheExecutor) {
         this.stringRedisTemplate = stringRedisTemplate;
+        this.cacheExecutor = cacheExecutor;
     }
 
-    /**
-     * 用于异步重建缓存的线程池
-     */
-    private static final ExecutorService CACHE_REBUILD_EXECUTOR = Executors.newFixedThreadPool(10);
+
 
     /**
      * 将任意对象序列化为 JSON 并写入 Redis，设置过期时间。
@@ -135,19 +135,23 @@ public class CacheClient {
             // 双重检查：获取锁后再次验证缓存是否已被其他线程重建
             String shopJson = stringRedisTemplate.opsForValue().get(key);
             if(StrUtil.isBlank(shopJson)){
+                unlock(lockKey);
                 return null;
             }
-            LocalDateTime expireTime2 = redisData.getExpireTime();
+            RedisData latestData = JSONUtil.toBean(shopJson, RedisData.class);
+            LocalDateTime expireTime2 = latestData.getExpireTime();
             if(expireTime2.isAfter(LocalDateTime.now())){
-                return r;
+                unlock(lockKey);
+                return JSONUtil.toBean((JSONObject) latestData.getData(), type);
             }
             // 确认过期，异步重建缓存
-            CACHE_REBUILD_EXECUTOR.submit(() -> {
-                try {
+            cacheExecutor.submit(()->{
+                try{
                     R r1 = dbFallback.apply(id);
                     this.setWithLogicalExpire(key, r1, time, unit);
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
+                }catch (Exception e){
+                    // 后台线程里抛 RuntimeException 无人接管，改为记录日志，保证可观测
+                    log.error("缓存重建失败,key={}",key,e);
                 }finally {
                     unlock(lockKey);
                 }
