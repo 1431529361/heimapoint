@@ -53,7 +53,7 @@ public class UserController {
      * 发送手机验证码
      */
     @PostMapping("code")
-    public Result sendCode(@RequestParam("phone") String phone, HttpSession session) {
+    public Result sendCode(@RequestParam("phone") String phone) {
 
         if(RegexUtils.isPhoneInvalid(phone)){
             return Result.fail("手机号格式错误");
@@ -69,9 +69,9 @@ public class UserController {
      * @param loginForm 登录参数，包含手机号、验证码；或者手机号、密码
      */
     @PostMapping("/login")
-    public Result login(@RequestBody LoginFormDTO loginForm, HttpSession session){
+    public Result login(@RequestBody LoginFormDTO loginForm){
 
-        return userService.login(loginForm,session);
+        return userService.login(loginForm);
 
     }
 
@@ -86,7 +86,7 @@ public class UserController {
             return Result.ok();
 
         }
-        String key = RedisConstants.LOGIN_CODE_KEY + token;
+        String key = RedisConstants.LOGIN_USER_KEY + token;
         stringRedisTemplate.delete(key);
         return Result.ok();
     }

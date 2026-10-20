@@ -18,7 +18,7 @@ public class CacheThreadPoolConfig {
      * 其余请求立即返回旧数据」，不阻塞用户请求线程。生命周期由 Spring 容器托管，
      * 使用方按 bean 名注入：{@code @Resource(name = "cacheExecutor")}。
      * <p>
-     * 注意：当前 {@code CacheClient} 仍使用自身的 static 线程池，尚未切换到本 Bean。
+     *
      */
     @Bean("cacheExecutor")
     public ThreadPoolTaskExecutor cacheExecutor(){

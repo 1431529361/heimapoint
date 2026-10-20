@@ -14,12 +14,10 @@ import com.hmdp.service.IUserService;
 import com.hmdp.utils.RedisConstants;
 import com.hmdp.utils.RegexUtils;
 import com.hmdp.utils.UserHolder;
-import org.springframework.beans.BeanUtils;
 import org.springframework.data.redis.connection.BitFieldSubCommands;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
-import javax.servlet.http.HttpSession;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
@@ -51,7 +49,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
      * @requestForm
      */
     @Override
-    public Result login(LoginFormDTO loginForm, HttpSession session) {
+    public Result login(LoginFormDTO loginForm) {
         String phone = loginForm.getPhone();
         // 校验手机号格式
         if (RegexUtils.isPhoneInvalid( phone)){
@@ -60,9 +58,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         // 校验验证码是否匹配
         String cacheCode = stringRedisTemplate.opsForValue().get(RedisConstants.LOGIN_CODE_KEY + phone);
         String code = loginForm.getCode();
-        if (cacheCode == null || !code.equals(cacheCode)){
+        if (cacheCode == null || !cacheCode.equals(code)){
             return Result.fail("验证码错误");
         }
+        //验证码一次性使用:登录成功后立即删除,防止TTL内重放
+        stringRedisTemplate.delete(RedisConstants.LOGIN_CODE_KEY+phone);
         // 根据手机号查询用户，不存在则自动注册
         User user = query().eq("phone", phone).one();
         if (user == null){
