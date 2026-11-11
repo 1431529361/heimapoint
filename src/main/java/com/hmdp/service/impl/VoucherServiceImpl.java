@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
+import java.time.ZoneId;
 import java.util.List;
 
 /**
@@ -53,6 +54,17 @@ public class VoucherServiceImpl extends ServiceImpl<VoucherMapper, Voucher> impl
         seckillVoucherService.save(seckillVoucher);
         //保存秒杀库存到Redis中
         stringRedisTemplate.opsForValue().set(RedisConstants.SECKILL_STOCK_KEY + voucher.getId(), voucher.getStock().toString());
+        // 活动起止时间同步到 Redis：Lua 在原子校验阶段直接比对，避免每次秒杀请求回查数据库。
+        // 数据库存的是本地时间，按系统默认时区换算成秒级时间戳，与 Java 侧传入的 now 保持同一基准
+        ZoneId zone = ZoneId.systemDefault();
+        if (voucher.getBeginTime() != null) {
+            stringRedisTemplate.opsForValue().set(RedisConstants.SECKILL_BEGIN_KEY + voucher.getId(),
+                    String.valueOf(voucher.getBeginTime().atZone(zone).toEpochSecond()));
+        }
+        if (voucher.getEndTime() != null) {
+            stringRedisTemplate.opsForValue().set(RedisConstants.SECKILL_END_KEY + voucher.getId(),
+                    String.valueOf(voucher.getEndTime().atZone(zone).toEpochSecond()));
+        }
 
     }
 }

@@ -15,6 +15,11 @@
     <description>Demo project for Spring Boot</description>
     <properties>
         <java.version>1.8</java.version>
+        <!-- 显式声明源/目标字节码级别：IDEA 导入 Maven 时会据此把模块 Language level 同步为 8。
+             否则 IDE 会按自身 JDK 17 的语言级别编译出 major 61 的 class，
+             而 Spring Boot 2.3.12（Spring 5.2.15，ASM 7.1）最高只能解析 major 57 -->
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
     </properties>
     <dependencies>
         <dependency>
@@ -90,6 +95,18 @@
 
     <build>
         <plugins>
+            <!-- 显式配置编译级别：插件 configuration 的优先级高于 settings.xml 里的 profile 属性。
+                 本机全局 settings.xml 存在一个强制 17 的 profile，若不在此处写死，
+                 会编译出 major 61 的 class，Spring Boot 2.3.12（ASM 7.1）无法解析 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>1.8</source>
+                    <target>1.8</target>
+                    <encoding>UTF-8</encoding>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
