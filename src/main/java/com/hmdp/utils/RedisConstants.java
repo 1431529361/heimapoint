@@ -21,6 +21,8 @@ public class RedisConstants {
     public static final String SECKILL_BEGIN_KEY = "seckill:begin:";
     public static final String SECKILL_END_KEY = "seckill:end:";
     public static final String SECKILL_STREAM_KEY = "stream.orders";
+    // 秒杀死信队列：重试耗尽的订单消息留痕，供人工排查
+    public static final String SECKILL_DEAD_STREAM_KEY = "stream.orders.dead";
     public static final String BLOG_LIKED_KEY = "blog:liked:";
     public static final String FEED_KEY = "feed:";
     public static final String SHOP_GEO_KEY = "shop:geo:";
